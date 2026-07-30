@@ -103,7 +103,11 @@ const Dashboard = () => {
   };
 
   const handleStartEdit = (food) => {
-    const expiry = food.expiryTime ? new Date(food.expiryTime).toISOString().slice(0, 16) : '';
+    let expiry = '';
+    if (food.expiryTime) {
+      const d = new Date(food.expiryTime);
+      expiry = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
     setEditingFood(food);
     setEditFormData({
       foodType: food.foodType || '',
@@ -341,7 +345,7 @@ const Dashboard = () => {
 
                       {/* Visual Expiry Progress Bar */}
                       <div className="max-w-md mt-2">
-                        <ExpiryProgress expiryTime={food?.expiryTime} createdAt={item.createdAt} />
+                        <ExpiryProgress expiryTime={food?.expiryTime} createdAt={food?.createdAt || item.createdAt} />
                       </div>
                     </div>
                   </div>

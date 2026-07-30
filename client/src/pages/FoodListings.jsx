@@ -43,15 +43,44 @@ export const ExpiryProgress = ({ expiryTime, createdAt }) => {
 
   const now = Date.now();
   const expiry = new Date(expiryTime).getTime();
-  const created = createdAt ? new Date(createdAt).getTime() : expiry - (6 * 3600 * 1000); // default 6h total window
+  const created = createdAt ? new Date(createdAt).getTime() : expiry - (4 * 3600 * 1000);
 
-  const totalDuration = Math.max(1, expiry - created);
+  const totalDuration = Math.max(1000, expiry - created);
   const timeLeft = expiry - now;
   const isExpired = timeLeft <= 0;
 
   // Percentage remaining (0 to 100)
   const percentLeft = isExpired ? 0 : Math.min(100, Math.max(0, (timeLeft / totalDuration) * 100));
   const isExpiringSoon = !isExpired && timeLeft <= 2 * 3600 * 1000; // < 2 hours
+
+  // Helper to format exact date and time cleanly
+  const formatDateTime = (dateObj) => {
+    if (!dateObj) return '';
+    const d = new Date(dateObj);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Format relative time posted (e.g. "Just now", "15m ago", "2h ago")
+  const formatPostedTime = (dateObj) => {
+    if (!dateObj) return null;
+    const pastMs = now - new Date(dateObj).getTime();
+    if (pastMs < 0) return 'Just now';
+    const mins = Math.floor(pastMs / (1000 * 60));
+    const hours = Math.floor(mins / 60);
+    const days = Math.floor(hours / 24);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ${mins % 60}m ago`;
+    return `${days}d ago`;
+  };
 
   // Format time remaining text
   const formatTimeLeft = (ms) => {
@@ -62,31 +91,48 @@ export const ExpiryProgress = ({ expiryTime, createdAt }) => {
     return `${mins}m left`;
   };
 
-  const formattedExact = new Date(expiryTime).toLocaleString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+  const formattedPosted = createdAt ? formatDateTime(createdAt) : null;
+  const postedRelative = createdAt ? formatPostedTime(createdAt) : null;
+  const formattedExpiry = formatDateTime(expiryTime);
 
   return (
-    <div className="space-y-1.5 my-2">
-      <div className="flex items-center justify-between text-[11px] font-bold">
-        <span className="flex items-center gap-1 text-slate-700">
-          <Clock className="h-3.5 w-3.5 text-slate-400" />
-          <span>{formattedExact}</span>
-        </span>
-
-        {isExpired ? (
-          <span className="text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-            <XCircle className="h-3 w-3" /> EXPIRED
-          </span>
-        ) : isExpiringSoon ? (
-          <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
-            <AlertTriangle className="h-3 w-3 text-amber-600" /> {formatTimeLeft(timeLeft)} (Expiring Soon)
-          </span>
-        ) : (
-          <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-            {formatTimeLeft(timeLeft)}
-          </span>
+    <div className="space-y-1.5 my-2.5">
+      {/* Timestamps: Posted Time & Expiry Time */}
+      <div className="flex flex-col gap-1 text-[11px]">
+        {createdAt && (
+          <div className="flex items-center justify-between text-slate-500 font-medium">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5 text-blue-500 flex-shrink-0" />
+              <span><strong className="text-slate-700">Posted:</strong> {formattedPosted}</span>
+            </span>
+            {postedRelative && (
+              <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                {postedRelative}
+              </span>
+            )}
+          </div>
         )}
+
+        <div className="flex items-center justify-between font-bold">
+          <span className="flex items-center gap-1 text-slate-700">
+            <Clock className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+            <span><strong className="text-slate-800">Expires:</strong> {formattedExpiry}</span>
+          </span>
+
+          {isExpired ? (
+            <span className="text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <XCircle className="h-3 w-3" /> EXPIRED
+            </span>
+          ) : isExpiringSoon ? (
+            <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse">
+              <AlertTriangle className="h-3 w-3 text-amber-600" /> {formatTimeLeft(timeLeft)} (Expiring Soon)
+            </span>
+          ) : (
+            <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+              {formatTimeLeft(timeLeft)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Visual Progress Bar */}
