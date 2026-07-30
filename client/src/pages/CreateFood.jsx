@@ -6,17 +6,11 @@ import { PlusCircle, ArrowLeft, UtensilsCrossed, Clock, Leaf, Plus, Trash2, Imag
 
 const CreateFood = () => {
   const now = new Date();
-  const formatForDateTimeInput = (d) => {
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  };
-
-  const defaultMinDateTime = formatForDateTimeInput(now);
-  // Default expiry date & time is set to 4 hours in the future from creation time
-  const defaultExpiryDateTime = formatForDateTimeInput(new Date(now.getTime() + 4 * 60 * 60 * 1000));
+  const defaultMinDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   // Multiple items state: EACH item has its OWN Dietary Category (Pure Veg / Non-Veg), Name, Qty, Description, Expiry, & Photo!
   const [items, setItems] = useState([
-    { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultExpiryDateTime, image: '' }
+    { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultMinDateTime, image: '' }
   ]);
 
   const [error, setError] = useState('');
@@ -44,7 +38,7 @@ const CreateFood = () => {
   };
 
   const addItemRow = () => {
-    setItems([...items, { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultExpiryDateTime, image: '' }]);
+    setItems([...items, { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultMinDateTime, image: '' }]);
   };
 
   const removeItemRow = (index) => {
@@ -238,7 +232,7 @@ const CreateFood = () => {
                         </label>
                         <input
                           type="datetime-local"
-                          value={item.expiryTime || defaultExpiryDateTime}
+                          value={item.expiryTime || defaultMinDateTime}
                           onChange={(e) => handleItemChange(idx, 'expiryTime', e.target.value)}
                           className="input-field text-sm bg-white py-2"
                           min={defaultMinDateTime}
