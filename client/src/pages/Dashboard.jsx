@@ -102,8 +102,21 @@ const Dashboard = () => {
     }
   };
 
+  const toLocalInputFromISO = (isoStr) => {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+
+  const toISOFromLocalInput = (localStr) => {
+    if (!localStr) return null;
+    const d = new Date(localStr);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+
   const handleStartEdit = (food) => {
-    const expiry = food.expiryTime ? new Date(food.expiryTime).toISOString().slice(0, 16) : '';
+    const expiry = food.expiryTime ? toLocalInputFromISO(food.expiryTime) : '';
     setEditingFood(food);
     setEditFormData({
       foodType: food.foodType || '',
@@ -118,7 +131,11 @@ const Dashboard = () => {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/foods/${editingFood._id}`, editFormData);
+      const payload = {
+        ...editFormData,
+        expiryTime: editFormData.expiryTime ? toISOFromLocalInput(editFormData.expiryTime) : undefined
+      };
+      await api.put(`/foods/${editingFood._id}`, payload);
       setSuccessMsg('Food posting updated successfully!');
       setEditingFood(null);
       fetchDashboardData();
@@ -341,7 +358,7 @@ const Dashboard = () => {
 
                       {/* Visual Expiry Progress Bar */}
                       <div className="max-w-md mt-2">
-                        <ExpiryProgress expiryTime={food?.expiryTime} createdAt={item.createdAt} />
+                        <ExpiryProgress expiryTime={food?.expiryTime} createdAt={food?.createdAt || item.createdAt} />
                       </div>
                     </div>
                   </div>

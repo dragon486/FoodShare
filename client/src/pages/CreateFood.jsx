@@ -4,13 +4,25 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { PlusCircle, ArrowLeft, UtensilsCrossed, Clock, Leaf, Plus, Trash2, Image } from 'lucide-react';
 
+const toISOFromLocalInput = (localStr) => {
+  if (!localStr) return null;
+  const d = new Date(localStr);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+};
+
+const formatForDateTimeInput = (d) => {
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+
 const CreateFood = () => {
   const now = new Date();
-  const defaultMinDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  const defaultMinDateTime = formatForDateTimeInput(now);
+  // Default expiry date & time is set to 4 hours in the future from creation time
+  const defaultExpiryDateTime = formatForDateTimeInput(new Date(now.getTime() + 4 * 60 * 60 * 1000));
 
   // Multiple items state: EACH item has its OWN Dietary Category (Pure Veg / Non-Veg), Name, Qty, Description, Expiry, & Photo!
   const [items, setItems] = useState([
-    { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultMinDateTime, image: '' }
+    { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultExpiryDateTime, image: '' }
   ]);
 
   const [error, setError] = useState('');
@@ -38,7 +50,7 @@ const CreateFood = () => {
   };
 
   const addItemRow = () => {
-    setItems([...items, { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultMinDateTime, image: '' }]);
+    setItems([...items, { name: '', quantity: '', dietaryType: 'Veg', description: '', expiryTime: defaultExpiryDateTime, image: '' }]);
   };
 
   const removeItemRow = (index) => {
@@ -66,7 +78,7 @@ const CreateFood = () => {
 
       // Earliest item expiry
       const itemExpiries = validItems.map(i => i.expiryTime).filter(Boolean);
-      const overallExpiry = itemExpiries.length > 0 ? itemExpiries.sort()[0] : defaultMinDateTime;
+      const overallExpiry = itemExpiries.length > 0 ? itemExpiries.sort()[0] : defaultExpiryDateTime;
 
       // Auto cover image from first item with image
       const coverImage = validItems.find(i => i.image)?.image || '';
@@ -78,12 +90,13 @@ const CreateFood = () => {
         foodType: mainTitle,
         dietaryType: validItems[0].dietaryType || 'Veg',
         quantity: totalQty,
-        expiryTime: overallExpiry,
+        expiryTime: toISOFromLocalInput(overallExpiry),
         image: coverImage,
         description: validItems.map(i => `${i.name} (${i.quantity} servings)`).join(' | '),
         items: validItems.map(it => ({
           ...it,
-          quantity: Number(it.quantity)
+          quantity: Number(it.quantity),
+          expiryTime: toISOFromLocalInput(it.expiryTime)
         }))
       };
 
@@ -232,7 +245,7 @@ const CreateFood = () => {
                         </label>
                         <input
                           type="datetime-local"
-                          value={item.expiryTime || defaultMinDateTime}
+                          value={item.expiryTime || defaultExpiryDateTime}
                           onChange={(e) => handleItemChange(idx, 'expiryTime', e.target.value)}
                           className="input-field text-sm bg-white py-2"
                           min={defaultMinDateTime}
